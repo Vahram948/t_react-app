@@ -1,5 +1,13 @@
-const AppReducer = (state, action) => {
-    switch (action.type) {
+export const initialState = {
+    isEventsOnLive: true,
+    isSocketConnected: false,
+    isSearching: false,
+    inboxEvents: [],
+    events: [],
+}
+
+export const reducer = (state, {type, payload}) => {
+    switch (type) {
         case "SET_SOCKET_CONNECTED":
             return {
                 ...state,
@@ -9,17 +17,17 @@ const AppReducer = (state, action) => {
         case "SET_EVENTS":
             return {
                 ...state,
-                inboxEvents: [action.payload, ...state.inboxEvents],
-                events: !state.isSearching ? [action.payload, ...state.events] : state.events
+                inboxEvents: [payload, ...state.inboxEvents],
+                events: !state.isSearching ? [payload, ...state.events] : state.events
             };
 
         case "FILTER_EVENTS":
             return {
                 ...state,
-                isSearching: action.payload ? true : false,
+                isSearching: payload ? true : false,
                 events: state.inboxEvents.filter(event => {
 
-                    const search = action.payload.toLowerCase();
+                    const search = payload.toLowerCase();
 
                     let content = ''
 
@@ -52,5 +60,3 @@ const AppReducer = (state, action) => {
             return state;
     }
 };
-
-export default AppReducer;

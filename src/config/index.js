@@ -1,4 +1,4 @@
 module.exports = {
-    apiBase:'http://localhost:5000',
+    apiBase: 'http://localhost:4000',
     channel: 'events'
 }

@@ -17,6 +17,8 @@ const EventItem = ({ event }) => {
         }
     }
 
+    const formatDate = (date) => (new Date(date)).toLocaleString()
+
     const content = getEventContent(event);
 
     return (
@@ -26,7 +28,7 @@ const EventItem = ({ event }) => {
                     <img src={CheckIconSvg} className="check-icon" alt="check" />
                     <span className="col-md-1 text-uppercase">{event.type}</span>
                     <span className="ml-2">{content}</span>
-                    <span className="col text-right"> {event.receivedAt} </span>
+                    <span className="col text-right"> {formatDate(event.receivedAt)} </span>
                 </div>
             </div>
         </ListGroup.Item >

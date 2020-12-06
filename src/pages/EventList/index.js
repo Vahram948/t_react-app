@@ -1,7 +1,10 @@
-import { useEffect, useContext } from 'react';
+import { useEffect } from 'react';
 import { EventItem } from '../../components';
-import { GlobalContext } from "../../context/GlobalState";
 import { Search as SearchIcon } from 'react-bootstrap-icons'
+import { useStateValue } from '../../context';
+import config from '../../config';
+import { toast } from 'react-toastify';
+import { io } from 'socket.io-client';
 import {
     Button,
     Alert,
@@ -13,32 +16,66 @@ import {
     Row,
     Col
 } from 'react-bootstrap'
+import {
+    filterEvents,
+    pauseEventsListening,
+    resumeEventsListening,
+    setEvents
+} from '../../context/Actions';
 
+// todo create socket provider
+const socket = io(config.apiBase);
 
 const EventList = () => {
-    
-    const {
-        events,
-        loadEvents,
-        filterEvents,
-        isEventsOnLive,
-        resumeEventsListening,
-        pauseEventsListening
-    } = useContext(GlobalContext);
+
+    const [state, dispatch] = useStateValue();
 
     useEffect(() => {
-        loadEvents()
+        connect()
     }, [])
+
+    const connect = async () => {
+
+        socket.on('error', () => {
+            toast.info('Sorry, there seems to be an issue with the connection!')
+        })
+
+        socket.on('connect', () => {
+            toast.info('Socket connected')
+            socket.on(config.channel, (data) => {
+                dispatch(setEvents(JSON.parse(data)))
+            });
+        });
+
+        socket.on('disconnect', () => {
+            toast.info('Socket disconnected')
+        });
+
+    }
 
     const renderEventList = () =>
         <ListGroup variant="flush">
-            {events.slice(0, 8).map((item, index) => <EventItem key={index} event={item} />)}
+            {state.events.slice(0, 8).map((item, index) => <EventItem key={index} event={item} />)}
         </ListGroup>
 
     const renderEmptyMsg = () =>
         <div className="text-center">
             <div>Not Events yet</div>
         </div>
+
+    const handleResumeEventsClick = () => {
+        socket.connect()
+        dispatch(resumeEventsListening());
+    }
+
+    const handlePauseEventsClick = () => {
+        socket.disconnect()
+        dispatch(pauseEventsListening());
+    }
+
+    const handleSearchInput = (e) => {
+        dispatch(filterEvents(e.target.value))
+    }
 
     return (
         <div>
@@ -48,15 +85,15 @@ const EventList = () => {
                         <Alert variant="primary">
                             <InputGroup>
                                 <ButtonGroup aria-label="Basic example">
-                                    <Button variant={isEventsOnLive ? 'primary' : 'secondary'}
-                                        onClick={() => resumeEventsListening()}
-                                        disabled={isEventsOnLive}
+                                    <Button variant={state.isEventsOnLive ? 'primary' : 'secondary'}
+                                        onClick={() => handleResumeEventsClick()}
+                                        disabled={state.isEventsOnLive}
                                     >
                                         Live
                                     </Button>
-                                    <Button variant={isEventsOnLive ? 'secondary' : 'primary'}
-                                        onClick={() => pauseEventsListening()}
-                                        disabled={!isEventsOnLive}
+                                    <Button variant={state.isEventsOnLive ? 'secondary' : 'primary'}
+                                        onClick={() => handlePauseEventsClick()}
+                                        disabled={!state.isEventsOnLive}
                                     >
                                         Pause
                                     </Button>
@@ -68,7 +105,7 @@ const EventList = () => {
                                 </InputGroup.Prepend>
                                 <FormControl
                                     type="text"
-                                    onChange={filterEvents}
+                                    onChange={handleSearchInput}
                                     placeholder="Type to search..."
                                     aria-label="Recipient's username"
                                     aria-describedby="basic-addon2"
@@ -78,7 +115,7 @@ const EventList = () => {
                     </Col>
                 </Row>
 
-                {events.length
+                {state.events.length
                     ? renderEventList()
                     : renderEmptyMsg()
                 }
